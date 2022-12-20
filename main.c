@@ -1,5 +1,5 @@
 #include<stdio.h>
-#include<conio.h>
+#include<string.h>
 void header(int col)
     {
         for (int i=1;i<=col;i++)
