@@ -32,9 +32,15 @@ void fill_grid(int turn,int num_of_col,int n,int m,char a[][m])
         if (a[jj][num_of_col]==' ')
         {
             if (turn%2==0){
+<<<<<<< HEAD
                 a[jj][num_of_col]='X';}
             else{
                 a[jj][num_of_col]='O';}
+=======
+            a[jj][num_of_col]='X';}
+            else{
+            a[jj][num_of_col]='O';}
+>>>>>>> 28effe8cdc2ba5c10a49cbd04a733c89524a219e
         break;
         }
     }
@@ -54,27 +60,47 @@ void header(int m)
         for (int i=1;i<=m;i++)
         {
             if (i<10)
+<<<<<<< HEAD
                 printf("  %d ",i);
             else
                 printf(" %d ",i);
+=======
+            printf("  %d ",i);
+            else
+            printf(" %d ",i);
+>>>>>>> 28effe8cdc2ba5c10a49cbd04a733c89524a219e
         }
          printf("\n");
     }
 //print a fixed boarder between each row
+<<<<<<< HEAD
 void bar (int col)
 {
     for (int i=0;i<col;i++)
+=======
+void bar (int m)
+{
+    for (int i=0;i<m;i++)
+>>>>>>> 28effe8cdc2ba5c10a49cbd04a733c89524a219e
     {
         printf("|---");
     }
     printf("|\n");
 }
 //intializing the array
+<<<<<<< HEAD
 void intial_arr (int rows,int col,char a[][col])
 {
     for (int i = 1; i <= rows; i++)
     {
         for (int j = 1; j <= col; j++)
+=======
+void intial_arr (int n,int m,char a[][m])
+{
+    for (int i = 1; i <= n; i++)
+    {
+        for (int j = 1; j <= m; j++)
+>>>>>>> 28effe8cdc2ba5c10a49cbd04a733c89524a219e
         {
             a[i][j]=' ';
         }
