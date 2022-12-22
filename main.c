@@ -5,7 +5,11 @@ void header(int col)
 {
     for (int i=1; i<=col; i++)
     {
-        printf("  %d ",i);
+        if (i <= 9){
+            printf("   %d  ",i);
+        }else {
+            printf("  %d  ",i);
+        }
     }
     printf("\n");
 }
@@ -14,7 +18,7 @@ void bar (int col)
 {
     for (int i=0; i<col; i++)
     {
-        printf("|---");
+        printf("|-----");
     }
     printf("|\n");
 }
@@ -31,7 +35,7 @@ void intial_arr (int n,int m,char a[][m])
 }
 //print the whole grid of the game
  void grid (int n,int m,char a[][m])
-    {
+{
         header(m);
         bar(m);
         int i, j;
@@ -39,12 +43,13 @@ void intial_arr (int n,int m,char a[][m])
         {
             for (j = 1; j <= m; j++)
             {
-                printf("| %c ", a[i][j]);
+                printf("|  %c  ", a[i][j]);
             }
             printf("|\n");
             bar(m);
         }
-    }
+}
+
 int main()
 {
     int rows, col;
