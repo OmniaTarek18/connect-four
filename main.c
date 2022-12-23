@@ -5,6 +5,8 @@
 #include<conio.h>
 #include<ctype.h>
 #define MAX 1000
+#define BOLD "\x1B[1m"
+#define RESET_BOLD "\x1B[0m"
 void red ()
 {
     system(" ");
@@ -19,63 +21,6 @@ void reset_color ()
 {
     system(" ");
     printf("\033[0m");
-}
-int choose_col(int m,char a[][m],int turn)
-{
-    // need to be player 1 please choose a coln ,same to player 2
-    int num_of_col ;
-    if (turn%2 == 0)
-    {
-        do
-        {
-            red();
-            printf("Player 1 turn !\nPlease choose the number of column you want:\n");
-            scanf ("%d",&num_of_col);
-            reset_color();
-        }
-        while (a[1][num_of_col]!=' ' || num_of_col<1 || num_of_col>m );
-    }
-    else if (turn%2 == 1)
-    {
-        do
-        {
-            yellow();
-            printf("Player 2 turn !\nPlease choose the number of column you want:\n");
-            scanf ("%d",&num_of_col);
-            reset_color();
-        }
-        while (a[1][num_of_col]!=' ' || num_of_col<1 || num_of_col>m );
-    }
-    return num_of_col;
-}
-int check_gameover (int m,char a[][m])
-{
-    for (int ii =1; ii<=m; ii++)
-    {
-        if (a[1][ii]==' ')
-        {
-            return 1 ;
-        }
-    }
-    return 0;
-}
-void fill_grid(int turn,int num_of_col,int n,int m,char a[][m])
-{
-    for (int jj=n; jj>0; jj--)
-    {
-        if (a[jj][num_of_col]==' ')
-        {
-            if (turn%2==0)
-            {
-                a[jj][num_of_col]='X';
-            }
-            else
-            {
-                a[jj][num_of_col]='O';
-            }
-            break;
-        }
-    }
 }
 int col_score(int rows,int col,char a[][col],char y)
 {
@@ -129,11 +74,11 @@ int score (int row,int col,char a[][col],char y)
 void score_color(int score1,int score2)
 {
     red();
-    printf("Player 1 score is %d",score1);
+    printf("Player 1 score : %d",score1);
     reset_color();
-    printf("       |       ");
+    printf("                 |       ");
     yellow();
-    printf("Player 2 score is %d\n",score2);
+    printf("Player 2 score : %d\n",score2);
     reset_color();
 }
 void score_print(int rows,int col,char a[rows][col])
@@ -142,6 +87,158 @@ void score_print(int rows,int col,char a[rows][col])
     score1 = score(rows,col,a,'X');
     score2 = score(rows,col,a,'O');
     score_color(score1,score2);
+}
+void moves_print(int moves1 , int moves2)
+{
+    red();
+    printf("Player 1 number of moves : %d",moves1);
+    reset_color();
+    printf("       |       ");
+    yellow();
+    printf("Player 2 number of moves : %d\n",moves2);
+    reset_color();
+}
+void moves_counter(int counter)
+{
+    int moves1 = 0 , moves2 = 0 ;
+    moves1 = counter/2 + counter%2 ;
+    moves2 = counter/2 ;
+    moves_print(moves1,moves2);
+}
+void mini_menu(int col)
+{
+    printf("Please choose one of the following :\n");
+    printf("X     : To reset the game\n");
+    printf("U     : To undo last move\n");
+    printf("R     : To redo last undo\n");
+    printf("S     : To save the game\n");
+    printf("E     : To exit the game\n");
+    printf("1->%d : To choose a column\n",col);
+
+}
+void eachtime_print(int rows,int col,char a[][col],int turn)
+{
+    if (turn%2 == 0){
+        red();
+        printf("Player 1 turn !\n");
+        mini_menu(col);
+        printf("Your Choice : ");
+        reset_color();
+    }
+    else if (turn%2 == 1){
+        yellow();
+        printf("Player 2 turn !\n");
+        mini_menu(col);
+        printf("Your Choice : ");
+        reset_color();
+    }
+}
+//this function is used to check if the string has a number or a string or neither
+int num_str_check(char choice[])
+{
+    int flag = -1 ;
+    for (int i=0;i<strlen(choice);i++){
+        if (isdigit(choice[i])){
+            flag = 1 ;
+        }
+        else if (isalpha(choice[i])){
+            flag = 0 ;
+        }
+    }
+    return flag ;
+}
+//this function extract a number from a string
+int num_extract(char choice[])
+{
+    int no_of_col = 0 , p = 0;
+    for (int i=0;i<strlen(choice);i++){
+        if (isspace(choice[i])){
+            continue ;
+        }
+        else if (isdigit(choice[i])){
+            no_of_col = (choice[i]-'0')*pow(10,p) + no_of_col ;
+            p++ ;
+        }
+    }
+    return no_of_col ;
+}
+//this function extract a char from a string
+char ch_extract(char choice[])
+{
+    char ch ;
+    for (int i=0;i<strlen(choice);i++){
+        if (isspace(choice[i])){
+            continue ;
+        }
+        else if(isalpha(choice[i])){
+            ch = choice[i] ;
+        }
+    }
+    return ch ;
+}
+int options(int rows,int col,char a[][col],int turn,int moves_seq[])
+{
+    char choice[30] ;
+    score_print(rows,col,a);
+    moves_counter(turn);
+    while ( 1 ){
+        eachtime_print(rows,col,a,turn);
+        fgets(choice,28,stdin);
+        if (num_str_check(choice)==1)
+        {
+            int no_of_col = 0 ;
+            no_of_col = num_extract(choice);
+            if (no_of_col>0 && no_of_col<=col && a[1][no_of_col]==' '){
+                moves_seq[turn] = no_of_col ;
+                return no_of_col ;
+            }
+        }
+        else if (num_str_check(choice)==0)
+        {
+            switch (toupper(ch_extract(choice))){
+                case 'X' :  //reset
+                    break ;
+                case 'U' :  //undo
+                    break ;
+                case 'R' :  //redo
+                    break ;
+                case 'S' :  //save
+                    break ;
+                case 'E' :  //exit
+                    break ;
+            }
+            return -1;
+        }
+    }
+}
+int check_gameover (int m,char a[][m])
+{
+    for (int ii =1; ii<=m; ii++)
+    {
+        if (a[1][ii]==' ')
+        {
+            return 1 ;
+        }
+    }
+    return 0;
+}
+void fill_grid(int turns,int num_of_col,int n,int m,char a[][m])
+{
+    for (int jj=n; jj>0; jj--)
+    {
+        if (a[jj][num_of_col]==' ')
+        {
+            if (turns%2==0)
+            {
+                a[jj][num_of_col]='X';
+            }
+            else
+            {
+                a[jj][num_of_col]='O';
+            }
+            break;
+        }
+    }
 }
 //print number of each column
 void header(int col)
@@ -208,16 +305,16 @@ void grid (int n,int m,char a[][m])
         bar(m);
     }
 }
-void play(int rows,int col,char a[][col])
+void play(int rows,int col,char a[][col],int moves_seq[])
 {
     //check if the game is over or not as it should return 0 if it's over
-    int counter =0;
+    int counter = 0 ;
     while (check_gameover (col,a))
     {
-        fill_grid(counter,choose_col(col,a,counter),rows,col,a);
+        options(rows,col,a,counter,moves_seq);
+        fill_grid(counter,moves_seq[counter],rows,col,a);
         grid(rows,col,a);
-        score_print(rows,col,a);
-        counter ++;
+        counter++;
     }
 }
 
@@ -231,9 +328,10 @@ int main()
         scanf("%d %d",&rows,&col);
     }
     char scores[MAX][MAX];
+    int moves_seq[rows*col] ;
     intial_arr(rows,col,scores);
     grid(rows,col,scores);
-    play(rows,col,scores);
+    play(rows,col,scores,moves_seq);
 
     return 0;
 }
