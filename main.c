@@ -1,52 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <ctype.h>
-#include <math.h>
 #define MAX 200
-FILE* fp;
-void lower_case(char s[])
-{
-    int j=0;
-    for (int i=0; s[i] != '\0'; i++)
-    {
-        if (isspace(s[i])==0)
-            s[j++]=tolower(s[i]);
-    }
-}
+FILE* fb;
+int num_to_try=0;
+char path[MAX]= {"file.xml"};
+char string1[MAX],string2[MAX],string3[MAX],string4[MAX];
+int new_path();
 typedef struct
 {
     int height;
     int width;
     int high;
 } inform;
-void corruption ()
+inform  inf;
+int read_num(char s3[])
 {
-    int n;
-    printf("FILE CORRUPTED..!!Please,enter the path\n");
-    scanf("%d",&n);//what is n?
-}
-int num_extract(char choice[])
-{
-    int num = 0, p = 0 , i = 0 ;
-    while (choice[i] != '\0')
+    char c ;
+    int i=0;
+    while ((c=fgetc(fb))!= EOF ) //instead \n put EOF
     {
-        if (isspace(choice[i]))
+        if (c == '<')
         {
-            continue ;
+            s3[i] = '\0' ;
+            return 1;
         }
-        else if (isdigit(choice[i]))
+        else if (isalpha(c) || ispunct(c))
         {
-            num = (choice[i]-'0')*pow(10,p) + num ;
-            p++ ;
+            break ;
         }
-        else if (isalpha(choice[i]) || ispunct(choice[i]))
-            corruption();
-        i++ ;
+        else
+            s3[i++] = c ;
     }
-    return num ;
+    return 0;
 }
-void search_for(char s[],int num,inform *in)
+int  search_for(char s[],int num,inform *in)
 {
     if (strcmp(s,"height")==0)
         in->height =num ;
@@ -55,121 +45,146 @@ void search_for(char s[],int num,inform *in)
     else if (strcmp(s,"highscores")==0)
         in->high=num ;
     else
-    {
-        corruption();
-    }
+        return 0;
+    return 1;
 }
-//ignore anything until find open tag else just corruption
-int clean_to_open()
+
+void lower_case(char s[])
 {
-    char c ;
-    while ((c=fgetc(fp))!= EOF) //instead \n put EOF
+    int j=0;
+    for (int i=0; s[i] != '\0'; i++)
     {
-        if (c == '<')
-            return 1;
+        if (isspace(s[i])==0)
+            s[j++]=tolower(s[i]);
     }
-    corruption();
-    return 0;
+    s[j]='\0';
 }
-//store a string to find the number in each row
-int read_to_open(char s3[])
+int to_open_tag()
 {
-    char c ;
-    int i=0;
-    while ((c=fgetc(fp))!= EOF) //instead \n put EOF
+    char c;
+    while ((c=fgetc(fb)) != EOF )
     {
-        if (c == '<')
+        if (c=='<')
         {
-            s3[i] = '\0' ;
             return 1;
         }
-        else
-            s3[i++] = c ;
+        else if (isspace(c)==0)
+            break;
     }
-    corruption();
     return 0;
 }
-//read the whole string between tags
-int read_to_close(char s[])
+// to store string inside the tags
+int between_tags(char s[])
 {
     char c;
     int i=0;
-    while ((c=fgetc(fp)) != EOF)  //instead \n put EOF
+    while ((c=fgetc(fb)) != EOF )
     {
-        if (c != '>')
-        {
-            s[i]= c;
-            i++;
-        }
-        else
+        if (c=='>'&& i !=0 )
         {
             s[i]='\0';
             return 1;
         }
+        else if (c != '<')
+            s[i++]=c;
     }
-    corruption();
     return 0;
 }
-void intialize(char s[],char k[])
+inform each_time()
 {
-    for (int i=0; s[i] !='\0'; i++)
-    {
-        s[i]='\0';
-    }
-    for (int i=0; k[i] !='\0'; i++)
-    {
-        k[i]='\0';
-    }
+    char s[MAX];
 
-}
-
-inform eachtime (char s[],char s2[])
-{
-    char s3[MAX];
-    inform inform_m ;
-    int num=0;
-    clean_to_open();
-    read_to_close(s);
-    read_to_open(s3);
-    num=num_extract(s3);
-    clean_to_open();
-    //if (fgetc(fp)=='/')
-    //{
-        read_to_close(s2);
-        if (strcmp(s,s2)==0)
+    for (int k=0; k<3; k++)
+    {
+        int n=0;
+        if (to_open_tag())
         {
-            lower_case(s);
-            search_for (s,num,&inform_m);
+            if (between_tags(string1))
+            {
+                if (read_num(s))
+                {
+                    n= atoi(s);
+                    if (fgetc(fb)=='/')
+                    {
+                        if (between_tags(string2))
+                        {
+                            if (strcmp(string1,string2)==0)
+                            {
+                                lower_case (string1);
+                                if (search_for (string1,n,&inf)==0)
+                                {
+                                    new_path();
+                                }
+                            }
+                            else
+                                new_path();
+                        }
+                        else
+                            new_path();
+                    }
+                    else
+                        new_path();;
+                }
+                else
+                    new_path();
+            }
+            else
+                new_path();
         }
         else
-            corruption();
-    //}
-    //else
-      //  corruption();
-    return inform_m;
+            new_path();
+    }
+    return inf;
 }
-
+void read_xml()
+{
+    if (to_open_tag())
+    {
+        if (between_tags(string3))
+        {
+            each_time(string1,string2);
+            if (to_open_tag()&& fgetc(fb)=='/')
+            {
+                if (between_tags(string4))
+                {
+                    if (strcmp(string4,string3)!=0)
+                        new_path();
+                }
+                else
+                    new_path();
+            }
+            else
+                new_path();
+        }
+        else
+            new_path();
+    }
+    else
+        new_path();
+}
+int new_path()
+{
+    if (num_to_try==2)
+    {
+        inf.height =7 ;
+        inf.width =9 ;
+        inf.high =10 ;
+        return 0;
+    }
+    printf("please,enter the path of file\n");
+    num_to_try++;
+    gets(path);
+    fb=fopen(path,"r");
+    read_xml();
+    return 0;
+}
 int main()
 {
-    fp =fopen("file.xml","r");
-    if (fp == NULL)
-        corruption();
-    inform i ;
-    char string1[MAX];
-    char string2[MAX];
-    char string3[MAX];
-    char string4[MAX];
-    clean_to_open();
-    read_to_close(string3);
-    for (int ii=0;ii<3;ii++){
-        i=eachtime(string1,string2);
-        intialize(string1,string2);
-    }
-    clean_to_open();
-    read_to_close(string4);
-    if (strcmp(string3,string4)!=0)
-        corruption();
-    fclose(fp);
-    printf("%d\n%d\n%d",i.height,i.width,i.high);
-    return 0 ;
+    fb = fopen(path,"r");
+    if (fb == NULL)
+        new_path();
+    read_xml();
+    fclose(fb);
+    printf("%d\n%d\n%d\n",inf.height,inf.high,inf.width);
+    return 0;
 }
