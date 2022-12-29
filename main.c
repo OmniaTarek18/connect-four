@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#define MAX 100
+#define MAX 200
 FILE* fp;
 void lower_case(char s[])
 {
@@ -24,12 +24,12 @@ void corruption ()
 {
     int n;
     printf("FILE CORRUPTED..!!Please,enter the path\n");
-    scanf("%d",&n);
+    scanf("%d",&n);//what is n?
 }
 int num_extract(char choice[])
 {
-    int no_of_col = 0, p = 0;
-    for (int i=0; i<strlen(choice); i++)
+    int num = 0, p = 0 , i = 0 ;
+    while (choice[i] != '\0')
     {
         if (isspace(choice[i]))
         {
@@ -37,27 +37,27 @@ int num_extract(char choice[])
         }
         else if (isdigit(choice[i]))
         {
-            no_of_col = (choice[i]-'0')*pow(10,p) + no_of_col ;
+            num = (choice[i]-'0')*pow(10,p) + num ;
             p++ ;
         }
+        else if (isalpha(choice[i]) || ispunct(choice[i]))
+            corruption();
+        i++ ;
     }
-    return no_of_col ;
+    return num ;
 }
-inform search_for(char s[],int num)
+void search_for(char s[],int num,inform *in)
 {
-    inform in;
     if (strcmp(s,"height")==0)
-        in.height =num ;
+        in->height =num ;
     else if (strcmp(s,"width")==0)
-        in.width =num ;
+        in->width =num ;
     else if (strcmp(s,"highscores")==0)
-        in.high=num ;
+        in->high=num ;
     else
     {
         corruption();
-
     }
-    return in;
 }
 //ignore anything until find open tag else just corruption
 int clean_to_open()
@@ -72,16 +72,19 @@ int clean_to_open()
     return 0;
 }
 //store a string to find the number in each row
-int clean_to_open2(char s3[])
+int read_to_open(char s3[])
 {
     char c ;
     int i=0;
     while ((c=fgetc(fp))!= EOF) //instead \n put EOF
     {
         if (c == '<')
+        {
+            s3[i] = '\0' ;
             return 1;
+        }
         else
-            s3[i]=fgetc(fp);
+            s3[i++] = c ;
     }
     corruption();
     return 0;
@@ -113,7 +116,7 @@ void intialize(char s[],char k[])
     {
         s[i]='\0';
     }
-    for (int i=0; s[i] !='\0'; i++)
+    for (int i=0; k[i] !='\0'; i++)
     {
         k[i]='\0';
     }
@@ -127,28 +130,28 @@ inform eachtime (char s[],char s2[])
     int num=0;
     clean_to_open();
     read_to_close(s);
-    clean_to_open2(s3);
+    read_to_open(s3);
     num=num_extract(s3);
     clean_to_open();
-    if (fgetc(fp)=='/')
-    {
+    //if (fgetc(fp)=='/')
+    //{
         read_to_close(s2);
         if (strcmp(s,s2)==0)
         {
             lower_case(s);
-            inform_m=search_for (s,num);
+            search_for (s,num,&inform_m);
         }
         else
             corruption();
-    }
-    else
-        corruption();
+    //}
+    //else
+      //  corruption();
     return inform_m;
 }
 
 int main()
 {
-    fp =fopen("D:\assignments\fdafds\file.xml","r");
+    fp =fopen("file.xml","r");
     if (fp == NULL)
         corruption();
     inform i ;
@@ -165,8 +168,8 @@ int main()
     clean_to_open();
     read_to_close(string4);
     if (strcmp(string3,string4)!=0)
-    corruption();
+        corruption();
     fclose(fp);
     printf("%d\n%d\n%d",i.height,i.width,i.high);
-
+    return 0 ;
 }
