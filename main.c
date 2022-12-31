@@ -13,7 +13,7 @@ FILE* f3;
 FILE* k;
 FILE* fb;
 int num_to_try=0;
-char path[MAXSTR]= {"file.xml"};
+char path[MAXSTR]= "file.xml";
 char string1[MAXSTR],string2[MAXSTR],string3[MAXSTR],string4[MAXSTR];
 typedef struct
 {
@@ -205,6 +205,7 @@ int check_gameover (int m,char a[][m])
 int main_menu()
 {
     int n;
+    printf("Main Menu: \n");
     printf("1     : start a new game\n");
     printf("2     : load a game \n");
     printf("3     : top players\n");
@@ -506,13 +507,13 @@ void score_print(int rows,int col,char a[rows][col],int *score1,int *score2)
 }
 void highscore_print(int n,FILE *high)
 {
-    player p ;
+    player p_cmp ;
     for (int i=1;i<=n;i++)
     {
-        if (fscanf(high,"%d ",&p.score) == 1)
+        if (fscanf(high,"%d ",&p_cmp.score) == 1)
         {
-            fgets(p.name,298,high);
-            printf("\nName  : %sScore : %d\nRank  : %d\n",p.name,p.score,i);
+            fgets(p_cmp.name,298,high);
+            printf("\nName  : %sScore : %d\nRank  : %d\n",p_cmp.name,p_cmp.score,i);
         }
         else
             break;
@@ -749,7 +750,7 @@ int new_path()
         inf.high =10 ;
         return 0;
     }
-    printf("please,enter the path of file\n");
+    printf("FILE IS CORRUPTED !!\nplease,enter the path of file\nDO NOT forget to double any backslach\n");
     num_to_try++;
     gets(path);
     fb=fopen(path,"r");
@@ -757,7 +758,33 @@ int new_path()
     return 0;
 }
 void main_menu_switch(int n,int col,int rows,char scores[][col],int *score1,int *score2);
-
+void highscore_display(int score1,int score2)
+{
+    if (score1 > score2)
+    {
+        red();
+        printf("PLAYER 1 WINS !\n");
+        printf("Player 1 , please enter your name : ");
+        fflush(stdin);
+        reset_color();
+        p.score = score1 ;
+        fgets(p.name,298,stdin);
+        highscore(p,inf.high);
+    }
+    else if (score1 < score2)
+    {
+        yellow();
+        printf("PLAYER 2 WINS !\n");
+        printf("Player 2 , please enter your name : ");
+        fflush(stdin);
+        reset_color();
+        p.score= score2 ;
+        fgets(p.name,298,stdin);
+        highscore(p,inf.high);
+    }
+    else
+        printf("DRAW\n");
+}
 int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int moves_seq[])
 {
     int redo_arr[rows*col], redo_count = -1 ;
@@ -810,6 +837,7 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
             case'E':
             case'e':
                 main_menu_switch(main_menu(),col,rows,a,&score1,&score2);
+                return 0;
                 break;
             case'X':
             case'x':
@@ -837,29 +865,7 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
     }
     if (mode_of_game==1 && (rows*col %2)==1)
         grid(rows,col,a);
-    // score display
-    if (score1 > score2)
-    {
-        red();
-        printf("PLAYER 1 WINS !");
-        printf("Player 1 , please enter your name : ");
-        reset_color();
-        p.score = score1 ;
-        fgets(p.name,298,stdin);
-        highscore(p,inf.high);
-    }
-    else if (score1 < score2)
-    {
-        yellow();
-        printf("PLAYER 2 WINS !");
-        printf("Player 2 , please enter your name : ");
-        reset_color();
-        p.score= score2 ;
-        fgets(p.name,298,stdin);
-        highscore(p,inf.high);
-    }
-    else
-        printf("DRAW");
+    highscore_display(score1,score2);
     main_menu_switch(main_menu(),col,rows,a,&score1,&score2);
     return 0;
 }
@@ -962,6 +968,7 @@ void main_menu_switch(int n,int col,int rows,char scores[][col],int *score1,int 
     case 4:
         break;
     }
+
 }
 int main()
 {
@@ -982,6 +989,6 @@ int main()
     }
     // main menu
     num_ofchoice=main_menu();
-    main_menu_switch(num_ofchoice,inf.width,inf.height,scores,score1,score2);
+    main_menu_switch(num_ofchoice,inf.height,inf.width,scores,score1,score2);
     return 0;
 }
