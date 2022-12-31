@@ -6,10 +6,29 @@
 #include<ctype.h>
 #include<time.h>
 #define MAX 1000
+#define MAXSTR 300
 FILE* f1;
 FILE* f2;
 FILE* f3;
 FILE* k;
+FILE* fb;
+int num_to_try=0;
+char path[MAXSTR]= {"file.xml"};
+char string1[MAXSTR],string2[MAXSTR],string3[MAXSTR],string4[MAXSTR];
+typedef struct
+{
+    int score ;
+    char name[MAXSTR] ;
+}player ;
+player p;
+int new_path();
+typedef struct
+{
+    int height;
+    int width;
+    int high;
+} inform;
+inform  inf;
 void red ()
 {
     system(" ");
@@ -30,6 +49,86 @@ int clean_stdin()
 {
     while (getchar() != '\n');
     return 1;
+}
+int read_num(char s3[])
+{
+    char c ;
+    int i=0;
+    while ((c=fgetc(fb))!= EOF ) //instead \n put EOF
+    {
+        if (c == '<')
+        {
+            s3[i] = '\0' ;
+            return 1;
+        }
+        else if (isalpha(c) || ispunct(c))
+        {
+            break ;
+        }
+        else
+            s3[i++] = c ;
+    }
+    return 0;
+}
+int  search_for(char s[],int num,inform *in)
+{
+    if (strcmp(s,"height")==0)
+        in->height =num ;
+    else if (strcmp(s,"width")==0)
+        in->width =num ;
+    else if (strcmp(s,"highscores")==0)
+        in->high=num ;
+    else
+        return 0;
+    return 1;
+}
+void lower_case(char s[])
+{
+    int j=0;
+    for (int i=0; s[i] != '\0'; i++)
+    {
+        if (isspace(s[i])==0)
+            s[j++]=tolower(s[i]);
+    }
+    s[j]='\0';
+}
+void copy_file(FILE *source,FILE *destination)
+{
+    char ch ;
+    while((ch = fgetc(source)) != EOF)
+    {
+        fputc(ch,destination);
+    }
+}
+int to_open_tag()
+{
+    char c;
+    while ((c=fgetc(fb)) != EOF )
+    {
+        if (c=='<')
+        {
+            return 1;
+        }
+        else if (isspace(c)==0)
+            break;
+    }
+    return 0;
+}
+int between_tags(char s[])
+{
+    char c;
+    int i=0;
+    while ((c=fgetc(fb)) != EOF )
+    {
+        if (c=='>'&& i !=0 )
+        {
+            s[i]='\0';
+            return 1;
+        }
+        else if (c != '<')
+            s[i++]=c;
+    }
+    return 0;
 }
 //print number of each column above the grid
 void header(int col)
@@ -399,12 +498,25 @@ void score_color(int score1,int score2)
     printf("Player 2 score : %d\n",score2);
     reset_color();
 }
-void score_print(int rows,int col,char a[rows][col])
+void score_print(int rows,int col,char a[rows][col],int *score1,int *score2)
 {
-    int score1, score2;
-    score1 = score(rows,col,a,'X');
-    score2 = score(rows,col,a,'O');
-    score_color(score1,score2);
+    *score1 = score(rows,col,a,'X');
+    *score2 = score(rows,col,a,'O');
+    score_color(*score1,*score2);
+}
+void highscore_print(int n,FILE *high)
+{
+    player p ;
+    for (int i=1;i<=n;i++)
+    {
+        if (fscanf(high,"%d ",&p.score) == 1)
+        {
+            fgets(p.name,298,high);
+            printf("\nName  : %sScore : %d\nRank  : %d\n",p.name,p.score,i);
+        }
+        else
+            break;
+    }
 }
 void moves_counter(int counter)
 {
@@ -413,15 +525,238 @@ void moves_counter(int counter)
     moves2 = counter/2 ;
     moves_print(moves1,moves2);
 }
-void reset_game(int rows,int col,int counter,char a[][col])
+void reset_game(int rows,int col,int counter,char a[][col],int *score1,int*score2)
 {
+    *score1 = 0 ;
+    *score2 = 0 ;
     intial_arr(rows,col,a);
     counter = 0 ;
     grid(rows,col,a);
     moves_counter(counter);
-    score_print(rows,col,a);
+    score_print(rows,col,a,score1,score2);
 }
-void main_menu_switch(int n,int col,int rows,char scores[][col]);
+int str_cmp(player p,FILE *high)
+{
+    int rank_p = 0,i=0,j=0,k=0,m=0,found=0;
+    player p_cmp ;
+    char n1[MAXSTR] ,n2[MAXSTR] ;
+    while(isspace(p.name[i++])==1)
+    {
+        continue ;
+    }
+    while(p.name[i] != '\0')
+    {
+        n1[j++]=tolower(p.name[i++]);
+    }
+    n1[j] = '\0' ;
+    while (fscanf(high,"%d ",&p_cmp.score) == 1)
+    {
+        fgets(p_cmp.name,298,high);
+        rank_p ++ ;
+        while(isspace(p_cmp.name[k++])==1)
+        {
+            continue ;
+        }
+        while(p_cmp.name[k] != '\0')
+        {
+            n2[m++]=tolower(p_cmp.name[k++]);
+        }
+        n2[m] = '\0' ;
+        if(strcmp(n1,n2) == 0)
+        {
+            found = 1;
+            break ;
+        }
+    }
+    if (found==1)
+        return rank_p ;
+    else
+        return 0 ;            //if rank=0 means not found,if rank>0 means found
+}
+//to sort the players in the highscore file
+int sorting(FILE *high,FILE *cpy,player p)
+{
+    int flag = 0 , rank = 0 , rank_p ,rank_p_org;
+    player p_comp ;
+    rank_p = str_cmp(p,high) ;
+    while (fscanf(high,"%d ",&p_comp.score) == 1)
+    {
+        fgets(p_comp.name,298,high);
+        rank++ ;
+        printf("%d ",rank);
+        if (rank_p == 0)
+        {
+            if (p.score < p_comp.score)
+            {
+                fprintf(cpy,"%d %s",p_comp.score,p_comp.name);
+                printf("1 ");
+            }
+            else
+            {
+                fprintf(cpy,"%d %s",p.score,p.name);
+                fprintf(cpy,"%d %s",p_comp.score,p_comp.name);
+                flag = 1 ;
+                rank_p_org = rank ;
+                rank ++ ;
+                printf("2 ");
+                break ;
+            }
+            printf("3 ");
+        }
+        else if (rank_p != 0)
+        {
+            if (rank == rank_p && p.score < p_comp.score)
+            {
+                fprintf(cpy,"%d %s",p_comp.score,p.name);
+                rank_p_org = rank_p ;
+                flag = 1 ;
+                break ;
+            }
+            else if (rank != rank_p)
+            {
+                if (p.score < p_comp.score)
+                {
+                    fprintf(cpy,"%d %s",p_comp.score,p_comp.name);
+                }
+                else
+                {
+                    fprintf(cpy,"%d %s",p.score,p.name);
+                    rank_p_org = rank ;
+                    rank++;
+                    fprintf(cpy,"%d %s",p_comp.score,p_comp.name);
+                    flag = 1 ;
+                    break ;
+                }
+            }
+            else if (rank == rank_p && p.score >= p_comp.score)
+            {
+                fprintf(cpy,"%d %s",p.score,p.name);
+                rank_p_org = rank_p ;
+                flag = 1 ;
+                break ;
+            }
+            printf("4 ");
+        }
+    }
+    if (flag == 0)
+        fprintf(cpy,"%d %s",p.score,p.name);
+    while (fscanf(high,"%d ",&p_comp.score) == 1)
+    {
+        fgets(p_comp.name,298,high);
+        rank++ ;
+        printf("%d ",rank);
+        if (rank == rank_p && p.score >= p_comp.score)
+            continue ;
+        fprintf(cpy,"%d %s",p_comp.score,p_comp.name);
+    }
+    return rank_p_org ;
+}
+int highscore(player p,int n)
+{
+    int rank_p ;
+    FILE *high , *cpy ;
+    high = fopen("highscores.txt","r+");
+    cpy = fopen("copy_highscores.txt","r+");
+    rank_p = sorting(high,cpy,p);
+    rewind(high);
+    rewind(cpy);
+    copy_file(cpy,high);
+    rewind(high);
+    rewind(cpy);
+    highscore_print(n,high);
+    fclose(cpy);
+    fclose(high);
+    return rank_p;
+}
+inform each_time()
+{
+    char s[MAXSTR];
+
+    for (int k=0; k<3; k++)
+    {
+        int n=0;
+        if (to_open_tag())
+        {
+            if (between_tags(string1))
+            {
+                if (read_num(s))
+                {
+                    n= atoi(s);
+                    if (fgetc(fb)=='/')
+                    {
+                        if (between_tags(string2))
+                        {
+                            if (strcmp(string1,string2)==0)
+                            {
+                                lower_case (string1);
+                                if (search_for (string1,n,&inf)==0)
+                                {
+                                    new_path();
+                                }
+                            }
+                            else
+                                new_path();
+                        }
+                        else
+                            new_path();
+                    }
+                    else
+                        new_path();;
+                }
+                else
+                    new_path();
+            }
+            else
+                new_path();
+        }
+        else
+            new_path();
+    }
+    return inf;
+}
+void read_xml()
+{
+    if (to_open_tag())
+    {
+        if (between_tags(string3))
+        {
+            each_time(string1,string2);
+            if (to_open_tag()&& fgetc(fb)=='/')
+            {
+                if (between_tags(string4))
+                {
+                    if (strcmp(string4,string3)!=0)
+                        new_path();
+                }
+                else
+                    new_path();
+            }
+            else
+                new_path();
+        }
+        else
+            new_path();
+    }
+    else
+        new_path();
+}
+int new_path()
+{
+    if (num_to_try==2)
+    {
+        inf.height =7 ;
+        inf.width =9 ;
+        inf.high =10 ;
+        return 0;
+    }
+    printf("please,enter the path of file\n");
+    num_to_try++;
+    gets(path);
+    fb=fopen(path,"r");
+    read_xml();
+    return 0;
+}
+void main_menu_switch(int n,int col,int rows,char scores[][col],int *score1,int *score2);
 
 int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int moves_seq[])
 {
@@ -429,6 +764,7 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
     clock_t start, end ;
     char letter;
     start = clock();
+    int score1 = 0,score2 = 0 ;
     //check if the game is over or not as it should return 0 if it's over
     while (check_gameover (col,a))
     {
@@ -453,7 +789,7 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
                     counter ++ ;
                 end = clock() ;
                 moves_counter(counter);
-                score_print(rows,col,a);
+                score_print(rows,col,a,&score1,&score2);
                 time_print(start,end,counter);
                 break;
             case'R':
@@ -464,7 +800,7 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
                 grid(rows,col,a);
                 end = clock() ;
                 moves_counter(counter);
-                score_print(rows,col,a);
+                score_print(rows,col,a,&score1,&score2);
                 time_print(start,end,counter);
                 break;
             case'S':
@@ -472,12 +808,12 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
                 save_m(counter,mode_of_game,rows,col,a);
                 break;
             case'E':
-                case'e':
-                        main_menu_switch(main_menu(),col,rows,a);
+            case'e':
+                main_menu_switch(main_menu(),col,rows,a,&score1,&score2);
                 break;
             case'X':
             case'x':
-                reset_game(rows,col,counter,a);
+                reset_game(rows,col,counter,a,&score1,&score2);
                 redo_count = -1 ;
                 time_print(clock(),clock(),counter);
                 break;
@@ -495,12 +831,36 @@ int play(int counter,int mode_of_game,int rows,int col,char a[rows][col],int mov
             grid(rows,col,a);
             end = clock() ;
             moves_counter(counter);
-            score_print(rows,col,a);
+            score_print(rows,col,a,&score1,&score2);
             time_print(start,end,counter);
         }
     }
     if (mode_of_game==1 && (rows*col %2)==1)
         grid(rows,col,a);
+    // score display
+    if (score1 > score2)
+    {
+        red();
+        printf("PLAYER 1 WINS !");
+        printf("Player 1 , please enter your name : ");
+        reset_color();
+        p.score = score1 ;
+        fgets(p.name,298,stdin);
+        highscore(p,inf.high);
+    }
+    else if (score1 < score2)
+    {
+        yellow();
+        printf("PLAYER 2 WINS !");
+        printf("Player 2 , please enter your name : ");
+        reset_color();
+        p.score= score2 ;
+        fgets(p.name,298,stdin);
+        highscore(p,inf.high);
+    }
+    else
+        printf("DRAW");
+    main_menu_switch(main_menu(),col,rows,a,&score1,&score2);
     return 0;
 }
 int mode_ofgame()
@@ -535,15 +895,15 @@ int load_menu ()
     while (numofgame <1 || numofgame >3);
     return numofgame ;
 }
-void no_game(FILE* f,int rows,int col,char scores[rows][col])
+void no_game(FILE* f,int rows,int col,char scores[rows][col],int *score1,int *score2)
 {
     if (f==NULL)
     {
         printf("NO Game Saved !!\n");
-        main_menu_switch(main_menu(),col,rows,scores);
+        main_menu_switch(main_menu(),col,rows,scores,score1,score2);
     }
 }
-void main_menu_switch(int n,int col,int rows,char scores[][col])
+void main_menu_switch(int n,int col,int rows,char scores[][col],int *score1,int *score2)
 {
     int mode=0,numofgame=0,counter=0,moves_seq[rows*col];
     switch (n)
@@ -560,7 +920,7 @@ void main_menu_switch(int n,int col,int rows,char scores[][col])
         {
         case 1:
             f1=fopen("f1.bin","rb");
-            no_game(f1,rows,col,scores);
+            no_game(f1,rows,col,scores,score1,score2);
             fread(&counter, sizeof(counter),1,f1);
             fread(&mode, sizeof(mode),1,f1);
             fread(&rows, sizeof(rows),1,f1);
@@ -570,7 +930,7 @@ void main_menu_switch(int n,int col,int rows,char scores[][col])
             break;
         case 2:
             f2=fopen("f2.bin","rb");
-            no_game(f2,rows,col,scores);
+            no_game(f2,rows,col,scores,score1,score2);
             fread(&counter, sizeof(counter),1,f2);
             fread(&mode, sizeof(mode),1,f2);
             fread(&rows, sizeof(rows),1,f2);
@@ -580,7 +940,7 @@ void main_menu_switch(int n,int col,int rows,char scores[][col])
             break;
         case 3:
             f3=fopen("f3.bin","rb");
-            no_game(f3,rows,col,scores);
+            no_game(f3,rows,col,scores,score1,score2);
             fread(&counter, sizeof(counter),1,f3);
             fread(&mode, sizeof(mode),1,f3);
             fread(&rows, sizeof(rows),1,f3);
@@ -591,10 +951,13 @@ void main_menu_switch(int n,int col,int rows,char scores[][col])
         }
         grid(rows,col,scores);
         moves_counter(counter);
-        score_print(rows,col,scores);
+        score_print(rows,col,scores,score1,score2);
         play(counter,mode,rows,col,scores,moves_seq);
         break;
     case 3:
+        n = inf.high ;
+        highscore(p,n);
+        main_menu_switch(main_menu(),col,rows,scores,score1,score2);
         break;
     case 4:
         break;
@@ -602,25 +965,23 @@ void main_menu_switch(int n,int col,int rows,char scores[][col])
 }
 int main()
 {
-    int rows, col, check =0;
+    fb = fopen(path,"r");
+    if (fb == NULL)
+        new_path();
+    read_xml();
+    fclose(fb);
+    int *score1=0;
+    int *score2=0;
     char scores[MAX][MAX];
     int num_ofchoice=0;
-    check =scanf("%d %d",&rows,&col);
-    //need to be deleted as xml file will replace it
-    while (check  != 2)
-    {
-        scanf("%*[^\n]");
-        printf("please ,Enter valid numbers !\n");
-        check =scanf("%d %d",&rows,&col);
-    }
     //should be add to xml code when it read num if the value isnot correct ask for path
-    while((rows<4 && col<4)|| rows<1 || col<1 )
+    while((inf.height<4 && inf.width<4)|| inf.height<1 || inf.width<1 )
     {
         printf("please ,Enter VALID BOARD SIZE!\n");
-        scanf("%d %d",&rows,&col);
+        scanf("%d %d",&inf.width,&inf.width);
     }
     // main menu
     num_ofchoice=main_menu();
-    main_menu_switch(num_ofchoice,col,rows,scores);
+    main_menu_switch(num_ofchoice,inf.width,inf.height,scores,score1,score2);
     return 0;
 }
